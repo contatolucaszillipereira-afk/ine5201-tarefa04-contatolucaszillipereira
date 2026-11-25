@@ -1,0 +1,258 @@
+
+# Tarefa 02 - Sistema de Cadastro de Alunos
+# Disciplina: Introdução à Ciência da Computação
+# Aluno(s): Lucas Zilli Pereira (24200261)
+# Data: 14/06/2026
+#
+# RELATÓRIO DE FUNCIONALIDADES E IMPLEMENTAÇÃO:
+# Este programa implementa um sistema CRUD (Create, Read, Update, Delete) 
+# em memória. Utilizamos uma Lista principal para armazenar os registros,
+# sendo que cada registro (aluno) é representado por um Dicionário, o que
+# facilita a associação de chaves (nome, matrícula, etc.) aos seus valores.
+# Todas as validações exigidas foram tratadas, incluindo unicidade de 
+# matrícula, campos obrigatórios e confirmação de exclusão.
+
+# 'alunos' é a nossa base de dados principal (uma Lista vazia no início).
+# Raciocínio: Uma lista é a estrutura ideal para guardar múltiplos itens 
+# (os dicionários dos alunos) e iterar sobre eles facilmente.
+alunos = []
+
+
+def validar_data(data):
+    """
+    Verifica se a data de nascimento foi inserida no formato correto (dd/mm/aaaa)
+    e se os valores de dia, mês e ano fazem sentido logicamente.
+    """
+    # Raciocínio: O split("/") divide a string em uma lista usando a barra como separador.
+    # Ex: "10/05/2026" se transforma em ["10", "05", "2026"].
+    partes = data.split("/")
+
+    # Se a divisão não resultar em exatamente 3 partes, o formato está incorreto.
+    if len(partes) != 3:
+        return False  
+
+    dia, mes, ano = partes
+
+    # isdigit() garante que o usuário digitou apenas números nas três partes,
+    # evitando erros na conversão para int() logo abaixo.
+    if not (dia.isdigit() and mes.isdigit() and ano.isdigit()):
+        return False
+
+    dia, mes, ano = int(dia), int(mes), int(ano)
+
+    # Validações lógicas básicas de calendário
+    if mes < 1 or mes > 12:
+        return False
+    if dia < 1 or dia > 31:
+        return False
+    if ano < 1900 or ano > 2026: # Impede anos absurdos ou no futuro
+        return False
+
+    return True
+
+
+def buscar_por_matricula(matricula):
+    """
+    Função auxiliar que percorre a lista de alunos e retorna o dicionário
+    do aluno caso encontre a matrícula informada. Retorna None se não achar.
+    """
+    # Raciocínio: A matrícula é o identificador único (ID) do sistema.
+    # Esta função isola a lógica de busca exata, podendo ser reutilizada
+    # nas funções de cadastro (para barrar duplicatas), alteração e exclusão.
+    for aluno in alunos:
+        if aluno["matricula"] == matricula:
+            return aluno
+    return None
+
+
+def mostrar_aluno(aluno):
+    """
+    Função auxiliar para imprimir os dados de um dicionário de aluno de forma formatada.
+    """
+    print("-" * 40)
+    print("Matrícula:", aluno["matricula"])
+    print("Nome:", aluno["nome"])
+    print("Endereço:", aluno["endereco"])
+    print("Data de Nascimento:", aluno["data_nasc"])
+
+
+def cadastrar():
+    """Realiza a inclusão de um novo aluno no sistema (Create)."""
+    print("\n=== Cadastrar Aluno ===")
+
+    # Raciocínio: Usamos .strip() em todos os inputs para remover espaços acidentais
+    # digitados pelo usuário no início ou fim, evitando inconsistências.
+    matricula = input("Matrícula: ").strip()
+
+    if matricula == "":
+        print("Erro: a matrícula é um campo obrigatório.")
+        return
+
+    # Validação de unicidade exigida no enunciado
+    if buscar_por_matricula(matricula) is not None:
+        print("Erro: já existe um aluno cadastrado com essa matrícula.")
+        return
+
+    nome = input("Nome: ").strip()
+    if nome == "":
+        print("Erro: o nome é um campo obrigatório.")
+        return
+
+    endereco = input("Endereço: ").strip()
+    if endereco == "":
+        print("Erro: o endereço é um campo obrigatório.")
+        return
+
+    data_nasc = input("Data de Nascimento (dd/mm/aaaa): ").strip()
+    if not validar_data(data_nasc):
+        print("Erro: data inválida. Utilize o formato dd/mm/aaaa com valores reais.")
+        return
+
+    # Após validar tudo, criamos um Dicionário para representar a entidade Aluno.
+    aluno = {
+        "matricula": matricula,
+        "nome": nome,
+        "endereco": endereco,
+        "data_nasc": data_nasc,
+    }
+    
+    # Adicionamos o dicionário à lista global 'alunos'.
+    alunos.append(aluno)
+    print("Aluno cadastrado com sucesso!")
+
+
+def listar():
+    """Mostra todos os alunos cadastrados no sistema (Read)."""
+    print("\n=== Lista de Alunos ===")
+    
+    if len(alunos) == 0:
+        print("Nenhum aluno cadastrado no momento.")
+        return 
+
+    # Raciocínio: Itera sobre a lista chamando a função de impressão para cada elemento.
+    for aluno in alunos:
+        mostrar_aluno(aluno)
+    print("-" * 40)
+
+
+def buscar():
+    """Procura alunos que coincidam com o nome ou matrícula digitada (Read)."""
+    print("\n=== Buscar Aluno ===")
+    termo = input("Digite o nome ou a matrícula: ").strip()
+    
+    if termo == "":
+        print("Erro: informe um nome ou matrícula para realizar a busca.")
+        return
+
+    # Raciocínio: Criamos uma lista temporária para guardar os resultados,
+    # pois a busca por nome pode retornar mais de um aluno (ex: vários "João").
+    encontrados = []
+    
+    for aluno in alunos:
+        # Utilizamos .lower() tanto no termo da busca quanto no nome do aluno
+        # para tornar a pesquisa "Case Insensitive" (não diferencia maiúsculas de minúsculas).
+        if aluno["matricula"] == termo or termo.lower() in aluno["nome"].lower():
+            encontrados.append(aluno)
+
+    if len(encontrados) == 0:
+        print("Nenhum aluno encontrado correspondente à busca.")
+        return
+
+    for aluno in encontrados:
+        mostrar_aluno(aluno)
+    print("-" * 40)
+
+
+def alterar():
+    """Modifica os dados de um aluno já existente (Update)."""
+    print("\n=== Alterar Aluno ===")
+    matricula = input("Digite a matrícula do aluno que deseja alterar: ").strip()
+    
+    aluno = buscar_por_matricula(matricula)
+
+    if aluno is None:
+        print("Erro: aluno não encontrado com esta matrícula.")
+        return
+
+    print("\nInstrução: Deixe o campo em branco e aperte Enter para manter o valor atual.")
+
+    # Raciocínio: Exibimos o valor atual entre colchetes. Se o usuário apenas apertar 
+    # Enter (string vazia ""), o if falha e o valor antigo é preservado no dicionário.
+    novo_nome = input(f"Novo nome [{aluno['nome']}]: ").strip()
+    if novo_nome != "":
+        aluno["nome"] = novo_nome
+
+    novo_endereco = input(f"Novo endereço [{aluno['endereco']}]: ").strip()
+    if novo_endereco != "":
+        aluno["endereco"] = novo_endereco
+
+    nova_data = input(f"Nova data de nascimento [{aluno['data_nasc']}]: ").strip()
+    if nova_data != "":
+        if validar_data(nova_data):
+            aluno["data_nasc"] = nova_data
+        else:
+            print("Aviso: Data inválida informada. A data de nascimento anterior foi mantida.")
+
+    print("Dados do aluno atualizados com sucesso!")
+
+
+def excluir():
+    """Remove um aluno da base de dados, mediante confirmação (Delete)."""
+    print("\n=== Excluir Aluno ===")
+    matricula = input("Digite a matrícula do aluno que deseja excluir: ").strip()
+    
+    aluno = buscar_por_matricula(matricula)
+
+    if aluno is None:
+        print("Erro: aluno não encontrado com esta matrícula.")
+        return
+
+    print(f"Aluno encontrado: {aluno['nome']} (Matrícula: {aluno['matricula']})")
+    
+    # Raciocínio: O .lower() é usado para que o programa aceite tanto "S" maiúsculo
+    # quanto "s" minúsculo como confirmação positiva.
+    confirmacao = input("Atenção! Tem certeza que deseja excluir este aluno? (s/n): ").strip().lower()
+
+    if confirmacao == "s":
+        # remove() encontra a referência exata do dicionário na lista e a deleta.
+        alunos.remove(aluno)  
+        print("Aluno excluído com sucesso do sistema!")
+    else:
+        print("Ação de exclusão cancelada pelo usuário.")
+
+
+def menu():
+    """Função principal que exibe a interface e controla o fluxo do programa."""
+    # Raciocínio: O loop infinito (while True) mantém o sistema rodando. 
+    # Ele só será quebrado (break) quando o usuário escolher explicitamente a opção '0'.
+    while True:
+        print("\n=== Sistema de Cadastro de Alunos ===")
+        print("1 - Cadastrar")
+        print("2 - Listar")
+        print("3 - Buscar")
+        print("4 - Alterar")
+        print("5 - Excluir")
+        print("0 - Sair")
+        
+        opcao = input("Digite a opção desejada: ").strip()
+
+        # Estrutura de decisão para direcionar à funcionalidade correspondente
+        if opcao == "1":
+            cadastrar()
+        elif opcao == "2":
+            listar()
+        elif opcao == "3":
+            buscar()
+        elif opcao == "4":
+            alterar()
+        elif opcao == "5":
+            excluir()
+        elif opcao == "0":
+            print("Encerrando o Sistema de Cadastro. Até logo!")
+            break
+        else:
+            print("Erro: Opção inválida. Por favor, tente novamente digitando um número de 0 a 5.")
+
+# Verifica se o script está sendo executado diretamente e inicia o programa
+if __name__ == "__main__":
+    menu()
